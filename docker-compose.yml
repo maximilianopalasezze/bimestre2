@@ -1,0 +1,10 @@
+services:
+  educloud-app:
+    build: .
+    container_name: educloud-app
+    ports:
+      - "8080:8080"
+    environment:
+      ORACLE_DB_URL: ${ORACLE_DB_URL}
+      ORACLE_DB_USER: ${ORACLE_DB_USER}
+      ORACLE_DB_PASSWORD: ${ORACLE_DB_PASSWORD}

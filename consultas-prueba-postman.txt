@@ -1,0 +1,34 @@
+1) Crear curso
+POST http://localhost:8080/api/cursos
+Content-Type: application/json
+
+{
+  "nombre": "Desarrollo Backend con Spring Boot",
+  "instructor": "Carlos Pérez",
+  "duracion": "40 horas",
+  "costo": 120000
+}
+
+2) Crear otro curso
+POST http://localhost:8080/api/cursos
+Content-Type: application/json
+
+{
+  "nombre": "Desarrollo Frontend con Angular",
+  "instructor": "María González",
+  "duracion": "35 horas",
+  "costo": 95000
+}
+
+3) Listar cursos
+GET http://localhost:8080/api/cursos
+
+4) Inscribir estudiante
+POST http://localhost:8080/api/inscripciones
+Content-Type: application/json
+
+{
+  "nombreEstudiante": "Maximiliano Palasezze",
+  "correoEstudiante": "maxi@duocuc.cl",
+  "idsCursos": [1, 2]
+}
