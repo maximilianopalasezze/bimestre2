@@ -13,11 +13,11 @@ jobs:
       - name: Descargar código del repositorio
         uses: actions/checkout@v4
 
-      - name: Configurar Java 21
+      - name: Configurar Java 17
         uses: actions/setup-java@v4
         with:
           distribution: 'temurin'
-          java-version: '21'
+          java-version: '17'
 
       - name: Compilar y ejecutar pruebas
         run: mvn clean test
