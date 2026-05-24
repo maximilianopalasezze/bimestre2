@@ -1,4 +1,4 @@
-name: Deploy EduCloud App
+name: Implementar la aplicacion EduCloud
 
 on:
   push:
@@ -6,11 +6,11 @@ on:
       - main
 
 jobs:
-  build-test-docker-deploy:
+  compilar-probar-docker-desplegar:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Descargar código del repositorio
+      - name: Descargar codigo del repositorio
         uses: actions/checkout@v4
 
       - name: Configurar Java 17
@@ -20,9 +20,9 @@ jobs:
           java-version: '17'
 
       - name: Compilar y ejecutar pruebas
-        run: mvn clean test
+        run: mvn clean package
 
-      - name: Iniciar sesión en Docker Hub
+      - name: Iniciar sesion en Docker Hub
         uses: docker/login-action@v3
         with:
           username: ${{ secrets.DOCKER_USERNAME }}
@@ -35,20 +35,17 @@ jobs:
           push: true
           tags: ${{ secrets.DOCKER_USERNAME }}/educloud-inscripciones:latest
 
+      - name: Crear archivo de llave SSH
+        run: |
+          echo "${{ secrets.EC2_KEY }}" > ec2_key.pem
+          chmod 600 ec2_key.pem
+
       - name: Desplegar en AWS EC2
-        uses: appleboy/ssh-action@v1.0.3
-        with:
-          host: ${{ secrets.EC2_HOST }}
-          username: ${{ secrets.EC2_USER }}
-          key: ${{ secrets.EC2_KEY }}
-          script: |
-            docker pull ${{ secrets.DOCKER_USERNAME }}/educloud-inscripciones:latest
-            docker stop educloud-app || true
-            docker rm educloud-app || true
-            docker run -d \
-              --name educloud-app \
-              -p 8080:8080 \
-              -e ORACLE_DB_URL='${{ secrets.ORACLE_DB_URL }}' \
-              -e ORACLE_DB_USER='${{ secrets.ORACLE_DB_USER }}' \
-              -e ORACLE_DB_PASSWORD='${{ secrets.ORACLE_DB_PASSWORD }}' \
-              ${{ secrets.DOCKER_USERNAME }}/educloud-inscripciones:latest
+        run: |
+          ssh -o StrictHostKeyChecking=no -i ec2_key.pem ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} << 'EOF'
+            sudo docker pull maxem7240/educloud-inscripciones:latest
+            sudo docker stop educloud-app || true
+            sudo docker rm educloud-app || true
+            sudo docker run -d --name educloud-app -p 8080:8080 maxem7240/educloud-inscripciones:latest
+            sudo docker ps
+          EOF
