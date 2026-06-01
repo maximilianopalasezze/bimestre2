@@ -1,0 +1,14 @@
+package com.duoc.educloud;
+
+import org.junit.jupiter.api.Test;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.context.ActiveProfiles;
+
+@SpringBootTest
+@ActiveProfiles("test")
+class EducloudApplicationTests {
+
+    @Test
+    void contextLoads() {
+    }
+}

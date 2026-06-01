@@ -1,0 +1,54 @@
+PRUEBAS POSTMAN - EDUCLOUD INSCRIPCIONES + AWS S3
+
+1) Crear un curso
+POST http://localhost:8080/api/cursos
+Body JSON:
+{
+  "nombre": "Desarrollo Backend con Spring Boot",
+  "instructor": "Carlos Pérez",
+  "duracion": "40 horas",
+  "costo": 120000
+}
+
+2) Crear otro curso
+POST http://localhost:8080/api/cursos
+Body JSON:
+{
+  "nombre": "Despliegue Cloud Native",
+  "instructor": "María González",
+  "duracion": "30 horas",
+  "costo": 100000
+}
+
+3) Inscribir estudiante
+POST http://localhost:8080/api/inscripciones
+Body JSON:
+{
+  "nombreEstudiante": "Maximiliano Palasezze",
+  "correoEstudiante": "maxi@duocuc.cl",
+  "idsCursos": [1, 2]
+}
+
+Guardar el idInscripcion devuelto. Ese número será usado como número de resumen.
+
+4) Generar archivo físico del resumen en el computador
+POST http://localhost:8080/api/inscripciones/1/resumen/generar
+
+5) Subir resumen al bucket S3
+POST http://localhost:8080/api/inscripciones/1/resumen/subir
+
+El archivo se guardará en S3 con esta estructura:
+1/resumen-inscripcion-1.txt
+
+6) Modificar resumen en S3
+PUT http://localhost:8080/api/inscripciones/1/resumen
+Body JSON:
+{
+  "contenido": "RESUMEN DE INSCRIPCIÓN MODIFICADO\n\nNúmero de resumen: 1\nEstudiante: Maximiliano Palasezze\nEstado: Archivo corregido correctamente."
+}
+
+7) Descargar resumen desde S3
+GET http://localhost:8080/api/inscripciones/1/resumen/descargar
+
+8) Borrar resumen desde S3
+DELETE http://localhost:8080/api/inscripciones/1/resumen
