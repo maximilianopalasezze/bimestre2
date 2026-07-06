@@ -1,10 +1,40 @@
 services:
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: educloud-rabbitmq
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    environment:
+      RABBITMQ_DEFAULT_USER: educloud
+      RABBITMQ_DEFAULT_PASS: educloud123
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
   educloud-app:
     build: .
     container_name: educloud-app
     ports:
       - "8080:8080"
     environment:
-      ORACLE_DB_URL: ${ORACLE_DB_URL}
-      ORACLE_DB_USER: ${ORACLE_DB_USER}
-      ORACLE_DB_PASSWORD: ${ORACLE_DB_PASSWORD}
+      SPRING_PROFILES_ACTIVE: ec2
+      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_PORT: 5672
+      RABBITMQ_USERNAME: educloud
+      RABBITMQ_PASSWORD: educloud123
+    volumes:
+      - educloud_h2_data:/app/data
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    restart: unless-stopped
+
+volumes:
+  rabbitmq_data:
+  educloud_h2_data:

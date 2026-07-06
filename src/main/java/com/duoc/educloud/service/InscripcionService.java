@@ -3,8 +3,9 @@ package com.duoc.educloud.service;
 import com.duoc.educloud.dto.CursoResumenDTO;
 import com.duoc.educloud.dto.InscripcionRequest;
 import com.duoc.educloud.dto.InscripcionResponse;
-import com.duoc.educloud.exception.SolicitudInvalidaException;
+import com.duoc.educloud.dto.ResumenInscripcionMensaje;
 import com.duoc.educloud.exception.RecursoNoEncontradoException;
+import com.duoc.educloud.exception.SolicitudInvalidaException;
 import com.duoc.educloud.model.Curso;
 import com.duoc.educloud.model.Inscripcion;
 import com.duoc.educloud.repository.InscripcionRepository;
@@ -24,10 +25,16 @@ public class InscripcionService {
 
     private final CursoService cursoService;
     private final InscripcionRepository inscripcionRepository;
+    private final ResumenInscripcionProducerService resumenInscripcionProducerService;
 
-    public InscripcionService(CursoService cursoService, InscripcionRepository inscripcionRepository) {
+    public InscripcionService(
+            CursoService cursoService,
+            InscripcionRepository inscripcionRepository,
+            ResumenInscripcionProducerService resumenInscripcionProducerService
+    ) {
         this.cursoService = cursoService;
         this.inscripcionRepository = inscripcionRepository;
+        this.resumenInscripcionProducerService = resumenInscripcionProducerService;
     }
 
     @Transactional
@@ -78,13 +85,42 @@ public class InscripcionService {
     @Transactional(readOnly = true)
     public Path generarArchivoResumenLocal(Long idInscripcion) throws IOException {
         Inscripcion inscripcion = inscripcionRepository.findById(idInscripcion)
-                .orElseThrow(() -> new RecursoNoEncontradoException("No existe una inscripción con el ID " + idInscripcion));
+                .orElseThrow(() -> new RecursoNoEncontradoException(
+                        "No existe una inscripción con el ID " + idInscripcion
+                ));
 
         Files.createDirectories(Path.of("resumenes"));
 
-        Path rutaArchivo = Path.of("resumenes", "resumen-inscripcion-" + idInscripcion + ".txt");
+        Path rutaArchivo = Path.of(
+                "resumenes",
+                "resumen-inscripcion-" + idInscripcion + ".txt"
+        );
 
+        String contenidoResumen = construirContenidoResumen(inscripcion);
+
+        Files.writeString(rutaArchivo, contenidoResumen);
+
+        ResumenInscripcionMensaje mensaje = new ResumenInscripcionMensaje(
+                inscripcion.getId(),
+                inscripcion.getNombreEstudiante(),
+                inscripcion.getCorreoEstudiante(),
+                inscripcion.getTotalPagar(),
+                inscripcion.getFecha().toString(),
+                contenidoResumen
+        );
+
+        resumenInscripcionProducerService.enviarResumen(mensaje);
+
+        return rutaArchivo;
+    }
+
+    public Path obtenerRutaArchivoResumen(Long idInscripcion) {
+        return Path.of("resumenes", "resumen-inscripcion-" + idInscripcion + ".txt");
+    }
+
+    private String construirContenidoResumen(Inscripcion inscripcion) {
         StringBuilder contenido = new StringBuilder();
+
         contenido.append("RESUMEN DE INSCRIPCIÓN\n");
         contenido.append("========================\n\n");
         contenido.append("Número de resumen: ").append(inscripcion.getId()).append("\n");
@@ -105,23 +141,22 @@ public class InscripcionService {
                     .append("\n");
         }
 
-        contenido.append("\nTotal a pagar: $").append(inscripcion.getTotalPagar()).append("\n");
+        contenido.append("\nTotal a pagar: $")
+                .append(inscripcion.getTotalPagar())
+                .append("\n");
+
         contenido.append("\nArchivo generado físicamente desde el microservicio EduCloud Inscripciones.\n");
 
-        Files.writeString(rutaArchivo, contenido.toString());
-
-        return rutaArchivo;
-    }
-
-    public Path obtenerRutaArchivoResumen(Long idInscripcion) {
-        return Path.of("resumenes", "resumen-inscripcion-" + idInscripcion + ".txt");
+        return contenido.toString();
     }
 
     private void validarCursosRepetidos(List<Long> idsCursos) {
         Set<Long> idsSinRepetir = new HashSet<>(idsCursos);
 
         if (idsSinRepetir.size() != idsCursos.size()) {
-            throw new SolicitudInvalidaException("No se puede inscribir dos veces el mismo curso en una sola inscripción");
+            throw new SolicitudInvalidaException(
+                    "No se puede inscribir dos veces el mismo curso en una sola inscripción"
+            );
         }
     }
 }
