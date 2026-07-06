@@ -23,7 +23,7 @@ services:
     ports:
       - "8080:8080"
     environment:
-      SPRING_PROFILES_ACTIVE: ec2
+      SPRING_PROFILES_ACTIVE: "ec2,local"
       RABBITMQ_HOST: rabbitmq
       RABBITMQ_PORT: 5672
       RABBITMQ_USERNAME: educloud
